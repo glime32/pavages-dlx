@@ -38,7 +38,7 @@ Une forme se dessine dans un fichier texte : `#` pour une case à remplir, `.` o
 Un pavage est un problème de **couverture exacte** : on a une matrice de 0 et de 1, et il faut choisir des lignes qui contiennent exactement un 1 dans chaque colonne.
 
 - une colonne par pièce (chaque pièce sert exactement une fois) et une par case (chaque case est couverte exactement une fois) ;
-- une ligne par façon de poser une pièce : orientation + position. Pour le 6×10 ça fait 2056 lignes et 72 colonnes.
+- une ligne par façon de poser une pièce : orientation + position. Pour le 6×10 ça fait 2056 lignes (2032 avec l'astuce ci-dessous) et 72 colonnes.
 
 ### Algorithme X
 
