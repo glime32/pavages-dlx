@@ -1,80 +1,86 @@
-# pavages-dlx
+<p align="center"><img src="docs/banner-pavages-dlx.png" alt="pavages-dlx" width="100%"></p>
 
-Un solveur de puzzles de pavage en C, construit sur l'**algorithme X** de Donald Knuth et ses **liens dansants** (*Dancing Links*). Il trouve **toutes** les solutions, puis les regroupe à symétrie près.
+<p align="center"><img src="https://img.shields.io/badge/C-dancing%20links-3949ab?style=flat-square" alt="C"> <img src="https://img.shields.io/badge/license-MIT-610089?style=flat-square" alt="license"></p>
 
-![Quatre des 2339 pavages du rectangle 6×10](images/6x10.svg)
+A tiling puzzle solver in C, built on Donald Knuth's **Algorithm X** and his **Dancing Links**. It finds **all** the solutions, then groups them up to symmetry.
 
-| Puzzle | Solutions distinctes | En tout | Temps |
+<p align="center"><a href="README.fr.md">🇫🇷 Version française</a></p>
+
+![Four of the 2339 tilings of the 6×10 rectangle](images/6x10.svg)
+
+| Puzzle | Distinct solutions | Total | Time |
 |---|---|---|---|
-| 12 pentaminos dans un 6×10 | **2339** | 9356 | ~1 s |
-| 5×12 | 1010 | 4040 | ~1,5 s |
-| 4×15 | 368 | 1472 | ~0,6 s |
-| 3×20 | 2 | 8 | 0,06 s |
-| carré 8×8 troué au centre | 65 | 520 | 0,2 s |
-| cœur ([`formes/coeur.txt`](formes/coeur.txt)) | 55 | 110 | 0,5 s |
-| cube Soma 3×3×3 (7 pièces en 3D) | **240** | 11520 | 0,4 s |
+| 12 pentominoes in a 6×10 | **2339** | 9356 | ~1 s |
+| 5×12 | 1010 | 4040 | ~1.5 s |
+| 4×15 | 368 | 1472 | ~0.6 s |
+| 3×20 | 2 | 8 | 0.06 s |
+| 8×8 square with a hole in the middle | 65 | 520 | 0.2 s |
+| heart ([`formes/coeur.txt`](formes/coeur.txt)) | 55 | 110 | 0.5 s |
+| 3×3×3 Soma cube (7 pieces in 3D) | **240** | 11520 | 0.4 s |
 
-Tous ces nombres sont les valeurs connues dans la littérature : c'est le test du programme.
+All these numbers are the known values from the literature: they are the program's test.
 
-![Le cœur](images/coeur.svg)
+![The heart](images/coeur.svg)
 
-## Utilisation
+## Usage
+
+Option names are French: `--afficher` = show, `--sans-astuce` = without the trick.
 
 ```sh
 make
-./pavages 6x10                      # une solution dessinée + le décompte
-./pavages 8x8 --afficher 5          # les 5 premières solutions distinctes
-./pavages soma --svg soma.svg       # le cube Soma, couche par couche
-./pavages formes/coeur.txt          # n'importe quelle forme de 60 cases
-./pavages 6x10 --sans-astuce        # sans couper les symétries : 7× plus lent, même résultat
-./tests.sh                          # les décomptes ci-dessus, en moins d'une seconde
+./pavages 6x10                      # one solution drawn + the count
+./pavages 8x8 --afficher 5          # the first 5 distinct solutions
+./pavages soma --svg soma.svg       # the Soma cube, layer by layer
+./pavages formes/coeur.txt          # any shape of 60 cells
+./pavages 6x10 --sans-astuce        # without cutting symmetries: 7× slower, same result
+./tests.sh                          # the counts above, in under a second
 ```
 
-Une forme se dessine dans un fichier texte : `#` pour une case à remplir, `.` ou espace pour un trou.
+A shape is drawn in a text file: `#` for a cell to fill, `.` or a space for a hole.
 
-## Comment ça marche
+## How it works
 
-### Couverture exacte
+### Exact cover
 
-Un pavage est un problème de **couverture exacte** : on a une matrice de 0 et de 1, et il faut choisir des lignes qui contiennent exactement un 1 dans chaque colonne.
+A tiling is an **exact cover** problem: given a matrix of 0s and 1s, pick rows so that every column contains exactly one 1.
 
-- une colonne par pièce (chaque pièce sert exactement une fois) et une par case (chaque case est couverte exactement une fois) ;
-- une ligne par façon de poser une pièce : orientation + position. Pour le 6×10 ça fait 2056 lignes (2032 avec l'astuce ci-dessous) et 72 colonnes.
+- one column per piece (each piece is used exactly once) and one per cell (each cell is covered exactly once);
+- one row per way of placing a piece: orientation + position. For the 6×10 that's 2056 rows (2032 with the trick below) and 72 columns.
 
-### Algorithme X
+### Algorithm X
 
-Récursif et tout bête : prendre la colonne qui a **le moins** de 1 (la case la plus difficile à couvrir), essayer chacune des lignes qui la couvrent, supprimer toutes les lignes en conflit, recommencer. Si une colonne n'a plus aucun 1, on revient en arrière.
+Recursive and dead simple: take the column with the **fewest** 1s (the hardest cell to cover), try each of the rows that cover it, remove all conflicting rows, repeat. If a column has no 1 left, backtrack.
 
-### Liens dansants
+### Dancing links
 
-La matrice est creuse, donc on ne stocke que les 1, chacun relié à ses voisins gauche/droite/haut/bas dans des listes doublement chaînées circulaires. Retirer un élément :
+The matrix is sparse, so only the 1s are stored, each one linked to its left/right/up/down neighbours in circular doubly linked lists. Removing an element:
 
 ```c
 N[N[x].d].g = N[x].g;
 N[N[x].g].d = N[x].d;
 ```
 
-L'idée de Knuth : **on ne touche pas aux pointeurs de `x`**. Pour le remettre en revenant en arrière, il suffit de
+Knuth's idea: **`x`'s own pointers are left untouched**. To put it back when backtracking, all it takes is
 
 ```c
 N[N[x].d].g = x;
 N[N[x].g].d = x;
 ```
 
-Les liens « dansent » : des millions de retraits et de remises par seconde, sans aucune allocation. Le programme affiche le nombre de liens défaits (les *updates* de l'article de Knuth).
+The links "dance": millions of removals and restorations per second, with no allocation at all. The program prints the number of links undone (the *updates* in Knuth's paper).
 
-### Orientations et symétries, en 3D
+### Orientations and symmetries, in 3D
 
-Toutes les isométries du cube sont les 48 **matrices de permutation signées** 3×3. Les orientations d'une pièce sont ses images par ces matrices, normalisées (translatées vers l'origine, triées) et dédoublonnées :
+All the isometries of the cube are the 48 3×3 **signed permutation matrices**. A piece's orientations are its images under these matrices, normalised (moved to the origin, sorted) and deduplicated:
 
-- pentaminos : les 8 matrices qui laissent l'axe z fixe (rotations et retournements dans le plan) → 63 orientations pour les 12 pièces ;
-- Soma : les 24 matrices de déterminant +1 (on ne peut pas retourner une pièce 3D comme dans un miroir) → 92 orientations.
+- pentominoes: the 8 matrices that keep the z axis fixed (rotations and flips in the plane) → 63 orientations for the 12 pieces;
+- Soma: the 24 matrices with determinant +1 (you can't mirror a 3D piece) → 92 orientations.
 
-### Compter à symétrie près
+### Counting up to symmetry
 
-Deux idées :
+Two ideas:
 
-1. **Couper les symétries à la source.** Le pentamino X est symétrique dans tous les sens : on ne garde que ses placements « minimaux » parmi leurs images par les symétries du plateau. Chaque famille de solutions garde au moins un représentant, et la recherche est ~7 fois plus courte.
-2. **Forme canonique.** Chaque solution trouvée est transformée par toutes les symétries du plateau, on garde la plus petite version (ordre alphabétique) et on la range dans une table de hachage. La taille de l'orbite donne aussi le nombre total de solutions.
+1. **Cut symmetries at the source.** The X pentomino is symmetric in every direction: only its "minimal" placements among their images under the board's symmetries are kept. Every family of solutions keeps at least one representative, and the search is ~7 times shorter.
+2. **Canonical form.** Each solution found is transformed by all the board's symmetries, the smallest version (alphabetical order) is kept and stored in a hash table. The size of the orbit also gives the total number of solutions.
 
-Pour le cube Soma, un miroir transforme une solution en une autre **à condition d'échanger les pièces A et B**, qui sont images l'une de l'autre dans un miroir : c'est géré, et on retombe sur les 240 solutions de la littérature.
+For the Soma cube, a mirror turns one solution into another **provided pieces A and B are swapped**, since they are mirror images of each other: that is handled, and the count comes back to the 240 solutions from the literature.
