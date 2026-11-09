@@ -33,6 +33,11 @@ static void *alloue(size_t n) {
     if (!p) meurt("plus de mémoire");
     return p;
 }
+static void *agrandit(void *p, size_t n) {
+    p = realloc(p, n);
+    if (!p) meurt("plus de mémoire");
+    return p;
+}
 
 /* ============================================================== DLX */
 
@@ -45,8 +50,7 @@ static long long mises_a_jour; /* « updates » au sens de Knuth : liens défait
 static int nouveau_noeud(void) {
     if (nb_noeuds == cap_noeuds) {
         cap_noeuds = cap_noeuds ? cap_noeuds * 2 : 4096;
-        N = realloc(N, sizeof(Noeud) * cap_noeuds);
-        if (!N) meurt("plus de mémoire");
+        N = agrandit(N, sizeof(Noeud) * cap_noeuds);
     }
     return nb_noeuds++;
 }
@@ -331,7 +335,7 @@ static void construit_matrice(int briser_symetrie) {
                         }
                         if (!ok) continue;
                         if (i == casseuse && !minimal_dans_orbite(pl.cases, p->n)) continue;
-                        if (nb_placements == cap) placements = realloc(placements, sizeof(Placement) * (cap *= 2));
+                        if (nb_placements == cap) placements = agrandit(placements, sizeof(Placement) * (cap *= 2));
                         placements[nb_placements] = pl;
                         dlx_ligne(cols, p->n + 1, nb_placements++);
                     }
@@ -523,7 +527,7 @@ static char *lit_fichier(const char *chemin) {
     char *b = alloue(cap);
     int c;
     while ((c = fgetc(f)) != EOF) {
-        if (n + 2 > cap) b = realloc(b, cap *= 2);
+        if (n + 2 > cap) b = agrandit(b, cap *= 2);
         b[n++] = (char)c;
     }
     b[n] = 0;
