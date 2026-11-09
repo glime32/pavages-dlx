@@ -27,6 +27,7 @@ make
 ./pavages soma --svg soma.svg       # le cube Soma, couche par couche
 ./pavages formes/coeur.txt          # n'importe quelle forme de 60 cases
 ./pavages 6x10 --sans-astuce        # sans couper les symétries : 7× plus lent, même résultat
+./tests.sh                          # les décomptes ci-dessus, en moins d'une seconde
 ```
 
 Une forme se dessine dans un fichier texte : `#` pour une case à remplir, `.` ou espace pour un trou.
